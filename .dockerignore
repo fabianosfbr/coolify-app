@@ -1,7 +1,29 @@
-node_modules
-vendor
-.env
-*.log
-*.md
-tests
-docker-compose.override.yml
+# Arquivos e diretórios comuns que devem ser ignorados
+/.git
+/.github
+/node_modules
+/storage/framework/cache/**
+/storage/framework/sessions/**
+/storage/framework/views/**
+/storage/logs/**
+/tests
+/vendor
+
+# Arquivos específicos de ambiente
+.env.*
+.env.backup
+.env.example
+.phpunit.result.cache
+.editorconfig
+.gitattributes
+.styleci.yml
+docker-compose*.yml
+phpunit.xml
+
+# Outros arquivos desnecessários para produção
+npm-debug.log
+yarn-error.log
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE.md

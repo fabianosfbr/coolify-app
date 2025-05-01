@@ -1,89 +1,74 @@
 version: '3.8'
-
 services:
-  # APP Laravel (PHP-FPM)
   app:
     build:
       context: .
-      dockerfile: Dockerfile
-    image: laravel-app
-    container_name: laravel-app
+      dockerfile: docker/prod/Dockerfile
+    container_name: coolify-app
     restart: unless-stopped
-    working_dir: /var/www/html
     volumes:
-      - ./:/var/www/html
       - ./storage:/var/www/html/storage
-    environment:
-      APP_ENV: production
-      APP_DEBUG: false
-      APP_KEY: ${APP_KEY}
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_DATABASE: ${DB_DATABASE}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_HOST: redis
+    networks:
+      - coolify-network
     depends_on:
-      - db
+      - mysql
       - redis
 
-  # NGINX
-  nginx:
+  webserver:
     image: nginx:alpine
-    container_name: laravel-nginx
+    container_name: coolify-webserver
     restart: unless-stopped
     ports:
       - "80:80"
     volumes:
-      - ./:/var/www/html
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/prod/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./public:/var/www/html/public
+      - ./storage/app/public:/var/www/html/public/storage
     depends_on:
       - app
+    networks:
+      - coolify-network
 
-  # DATABASE (MySQL)
-  db:
+  mysql:
     image: mysql:8.0
-    container_name: mysql
+    container_name: coolify-mysql
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE:-coolify}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_USER: ${DB_USERNAME:-coolify}
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no"
     volumes:
-      - db_data:/var/lib/mysql
-    ports:
-      - "3306:3306"
+      - coolify-mysql-data:/var/lib/mysql
+    networks:
+      - coolify-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-p${DB_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
-  # REDIS
   redis:
     image: redis:alpine
-    container_name: redis
+    container_name: coolify-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
-
-  # QUEUE WORKER
-  queue:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: laravel-queue
-    command: php artisan queue:work --tries=3 --timeout=90
-    depends_on:
-      - app
-      - redis
-    environment:
-      APP_ENV: production
-      APP_DEBUG: false
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_DATABASE: ${DB_DATABASE}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_HOST: redis
     volumes:
-      - ./:/var/www/html
+      - coolify-redis-data:/data
+    networks:
+      - coolify-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+networks:
+  coolify-network:
+    driver: bridge
 
 volumes:
-  db_data:
+  coolify-mysql-data:
+    driver: local
+  coolify-redis-data:
+    driver: local
