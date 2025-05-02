@@ -1,12 +1,37 @@
-    
+version: '3.8'
 
 services:
   php:
     build:
       context: .
-      dockerfile: docker/prod/Dockerfile
+      dockerfile: Dockerfile
     volumes:
       - .:/var/www
     environment:
       - APP_ENV=production
       - PHP_OPCACHE_VALIDATE_TIMESTAMPS=0
+    depends_on:
+      - mysql
+      - redis
+
+  schedule:
+    image: fabianosfbr/coolify-app:1.0
+    volumes:
+      - .:/var/www
+    entrypoint: |
+      /bin/sh -c "while [ true ]; do
+        php /var/www/artisan schedule:run --verbose --no-interaction &
+        sleep 60
+      done"
+    depends_on:
+      - php
+
+  queue-worker:
+    image: fabianosfbr/coolify-app:1.0
+    volumes:
+      - .:/var/www
+    command: php /var/www/artisan queue:work --sleep=3 --tries=3 --timeout=90
+    depends_on:
+      - php
+
+
