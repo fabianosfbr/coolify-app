@@ -2,7 +2,18 @@ FROM debian:bullseye-slim
 
 
 # Instala dependências
-
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        php-cli \
+        php-zip \
+        php-mbstring \
+        php-xml \
+        curl \
+        unzip \
+        git \
+        ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 
 # Cria diretório da app
