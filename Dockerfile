@@ -33,13 +33,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
-
-
-# Instalar a extensão SOAP para PHP
-RUN install-php-extensions intl mcrypt soap imagick
-
-RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
-RUN apt-get install -y nodejs nano
     
 
 # Define diretório de trabalho
@@ -53,7 +46,6 @@ RUN chown -R www-data:www-data /var/www \
     && chmod -R 755 /var/www/storage /var/www/bootstrap/cache
 
 # Configurações recomendadas do PHP para produção
-COPY ./docker/php/php.ini /usr/local/etc/php/php.ini
 
 # Habilita opcache com bom desempenho para Laravel
 RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini \
