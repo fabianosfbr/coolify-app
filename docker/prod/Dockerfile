@@ -1,70 +1,73 @@
-FROM php:8.2-fpm-alpine
+FROM php:8.2-fpm
 
-LABEL maintainer="Coolify App"
+USER root
 
-WORKDIR /var/www/html
-
-# Install dependencies
-RUN apk add --no-cache \
-    curl \
-    zip \
-    unzip \
+# Instala dependências do sistema e extensões do PHP
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
-    supervisor \
-    libpng-dev \
-    libzip-dev \
-    freetype-dev \
-    libjpeg-turbo-dev \
-    oniguruma-dev \
-    icu-dev \
-    mysql-client
-
-# Install PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-    pdo_mysql \
-    mysqli \
-    mbstring \
+    unzip \
     zip \
-    exif \
-    pcntl \
-    bcmath \
-    gd \
-    intl \
-    opcache
+    libzip-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libonig-dev \
+    libxml2-dev \
+    libicu-dev \
+    libssl-dev \
+    libmagickwand-dev \
+    libxslt-dev \
+    curl \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-configure intl \
+    && docker-php-ext-install \
+        pdo \
+        pdo_mysql \
+        zip \
+        soap \
+        intl \
+        xsl \
+        opcache \
+    && pecl install imagick \
+    && docker-php-ext-enable imagick \
+    && apt-get autoremove -y \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Configure PHP
-COPY docker/prod/php.ini /usr/local/etc/php/conf.d/app.ini
+# Instalar a extensão SOAP para PHP
+RUN install-php-extensions intl mcrypt soap imagick
 
-# Configure Supervisor
-RUN mkdir -p /var/log/supervisor
-COPY docker/prod/supervisor.conf /etc/supervisor/conf.d/supervisord.conf
+RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
+RUN apt-get install -y nodejs nano
+    
 
-# Copy application files
-COPY . /var/www/html
+# Define diretório de trabalho
+WORKDIR /var/www
 
-# Set proper permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/bootstrap/cache
+# Copia arquivos da aplicação (ex: Laravel)
+COPY . .
 
-# Install application dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+# Permissões para diretórios necessários
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 755 /var/www/storage /var/www/bootstrap/cache
 
-# Generate application key (apenas se não existir)
-RUN if [ ! -f .env ]; then \
-    cp .env.example .env; \
-    php artisan key:generate --force; \
-fi
+# Configurações recomendadas do PHP para produção
+COPY ./docker/php/php.ini /usr/local/etc/php/php.ini
 
-# Build frontend assets (se necessário)
-# RUN npm ci && npm run build
+# Habilita opcache com bom desempenho para Laravel
+RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini \
+ && echo "opcache.enable_cli=1" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini \
+ && echo "opcache.memory_consumption=128" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini \
+ && echo "opcache.interned_strings_buffer=8" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini \
+ && echo "opcache.max_accelerated_files=10000" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini \
+ && echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini
 
-# Expose port 9000 (PHP-FPM)
-EXPOSE 9000
+# Usuário padrão para execução
+USER www-data
 
-# Iniciar PHP-FPM e Supervisor
-CMD ["/bin/sh", "-c", "php-fpm -D && exec supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
+RUN npm install
+RUN npm run build
+
+RUN composer install --no-interaction --optimize-autoloader --no-dev
+
