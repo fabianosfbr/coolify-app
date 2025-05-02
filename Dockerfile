@@ -10,8 +10,6 @@ RUN install-php-extensions mcrypt soap imagick
 RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
 RUN apt-get install -y nodejs nano
 
-RUN cp /etc/ssl/openssl.cnf /etc/ssl/openssl.cnf.bak && \
-    cp docker/prod/openssl.cnf /etc/ssl/openssl.cnf 
 
 COPY --chown=www-data:www-data . /var/www/html
 
