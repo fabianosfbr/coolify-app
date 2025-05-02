@@ -2,6 +2,13 @@ FROM php:8.2-fpm
 
 USER root
 
+# Instala o Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# Instala o Node.js
+RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
+    RUN apt-get install -y nodejs nano
+    
+
 # Instala dependências do sistema e extensões do PHP
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
@@ -45,7 +52,6 @@ COPY . .
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 755 /var/www/storage /var/www/bootstrap/cache
 
-# Configurações recomendadas do PHP para produção
 
 # Habilita opcache com bom desempenho para Laravel
 RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini \
@@ -58,3 +64,6 @@ RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.
 # Usuário padrão para execução
 USER www-data
 
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+RUN npm install
+RUN npm run build
