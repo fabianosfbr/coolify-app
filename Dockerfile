@@ -1,6 +1,3 @@
-#Get Composer
-FROM composer:2.0 as vendor
-
 FROM php:8.2-fpm
 
 USER root
@@ -64,6 +61,4 @@ RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.
 # Usuário padrão para execução
 USER www-data
 
-
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
