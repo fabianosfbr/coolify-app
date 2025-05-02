@@ -25,7 +25,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libmagickwand-dev \
     libxslt-dev \
     curl \
-    supervisor \
     && docker-php-ext-configure zip \
     && docker-php-ext-configure intl \
     && docker-php-ext-install \
@@ -62,17 +61,9 @@ RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.
  && echo "opcache.max_accelerated_files=10000" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini \
  && echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini
 
-
-# Copia o arquivo de configuração do supervisor
-
-
 # Usuário padrão para execução
 USER www-data
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 RUN npm install
 RUN npm run build
-
-
-# Comando para iniciar o supervisord
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
