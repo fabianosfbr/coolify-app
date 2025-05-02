@@ -4,6 +4,9 @@ ENV PHP_OPCACHE_ENABLE=1
 
 USER root
 
+# Instalar a extensão SOAP para PHP
+RUN install-php-extensions mcrypt soap
+
 RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
 RUN apt-get install -y nodejs
 
