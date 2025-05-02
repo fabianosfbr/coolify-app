@@ -2,10 +2,9 @@ FROM php:8.2-fpm
 
 USER root
 
-
+# Instala o Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-
+# Instala o Node.js
 RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
     RUN apt-get install -y nodejs nano
     
@@ -65,4 +64,4 @@ RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.
 # Usuário padrão para execução
 USER www-data
 
-
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
