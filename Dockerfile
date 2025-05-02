@@ -65,3 +65,5 @@ RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.
 USER www-data
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+RUN npm install
+RUN npm run build
