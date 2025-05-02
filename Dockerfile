@@ -1,15 +1,21 @@
 # Dockerfile
+FROM composer:latest as composer
+
 
 FROM debian:bullseye-slim
-
 # Variáveis
 ENV PHP_VERSION=8.2
 
 # Instala dependências
 
-
 # Instala Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# Copiar o binário do Composer da imagem oficial
+COPY --from=composer /usr/bin/composer /usr/bin/composer
+
+# Verificar a instalação
+RUN composer --version
+
+
 
 # Cria diretório da app
 WORKDIR /var/www/html
